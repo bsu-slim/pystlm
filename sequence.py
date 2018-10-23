@@ -47,6 +47,7 @@ class Queue(object):
 class Sequence(Queue):
 
     def __init__(self):
+        super(Sequence, self).__init__()
         self.numPads = 0
     #      
     def pad(self):
@@ -103,13 +104,13 @@ class Text(object):
         return len(self.items)
 
     def clear(self):
-        self.items.clear()
+        self.items = list() # should be self.items.clear()
 
     def at(self, i):
-        if len(self) == 0:
+        if self.size() == 0:
             return 0
         if i == -1:
-            i = len(self) - 1
+            i = self.size() - 1
         return self.items[i]
 
     def offer(self, word):

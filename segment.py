@@ -12,11 +12,7 @@ class Segment(object):
     def __init__(self, l=0):
         self.left = l
         self.right = -1
-        self.link = Segment()
-
-    @__init__.register(object, int)
-    def __init___0(self, l):
-        self.left = l
+        self.link = None
 
     def set_link(self, link):
         self.link = link
@@ -54,6 +50,9 @@ class Segment(object):
     def num_children(self):
         return 0
     
+    def __str__(self):
+        return str((self.__class__.__name__, self.left, self.right, str(self.link)))
+    
 
 
 class InternalSegment(Segment):
@@ -61,9 +60,9 @@ class InternalSegment(Segment):
     def __init__(self, l):
         super(InternalSegment, self).__init__(l)
         self.children = dict()
-        self.setCount(0.0)
+        self.set_count(0.0)
 
-    def findBranch(self, w):
+    def find_branch(self, w):
         if len(self.children) == 0:
             return None
         i = self.find_index(w)
@@ -79,7 +78,7 @@ class InternalSegment(Segment):
     def get_right(self):
         return self.children[self.right].get_left()
 
-    def setCount(self):
+    def update_count(self):
         self.set_count(0.0)
         for s in self.children.keys():
             self.increment(self.children[s].getCount())
@@ -102,10 +101,10 @@ class InternalSegment(Segment):
             if len(self.children) == 0:
                 self.right = w
             self.children[w] = branch
-            return None
+            return branch
         else:
             old = self.children[w]
-            self.children.put[w] = branch
+            self.children[w] = branch
             return old
 
 
@@ -142,7 +141,7 @@ class LeafSegment(Segment):
         self.text = text
 
     def get_right(self):
-        return len(self.text)
+        return self.text.size()
 
     def num_children(self):
         return 0
