@@ -110,17 +110,18 @@ class SuffixTree:
         for child in c.children:
             self.update_counts(c.children[child])
             
-    def train_node(self, node):
+    def train_node(self, parent, node):
         if node is None: return
         if node.get_left() > -1:
             if node.num_children() == 0: return
-            c.train()
+            # training WAC nodes needs to happen here
             
         for child in node.children:
-            self.update_counts(node.children[child])
+            self.trian_node(node, node.children[child])
     
     def train_nodes(self):
-        self.train_node(self.get_root())
+        for child in self.get_root().children:
+            self.trian_node(self.get_root(), self.get_root().children[child])
             
     
     def update_all_counts(self):
