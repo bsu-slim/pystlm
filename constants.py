@@ -4,6 +4,7 @@ class Constants(object):
     # 	 * you shouldn't need to change anything.
     # 	 
     ROOT = "<root>"
+    DISCOUNT=0.1
     UNK = "UNK"
     NUM_PAD = 1
     STOP = "</s>"

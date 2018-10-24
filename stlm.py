@@ -4,13 +4,14 @@ Created on Oct 23, 2018
 @author: ckennington
 '''
 from sequence import Text
+from constants import Constants
 
 class STLM:
     
     def __init__(self, trie):
         self.trie = trie
         self.offset = Text() # ??
-        self.disc = 0.5
+        self.disc = Constants.DISCOUNT
         self.start_new_utterance()
         
     def start_new_utterance(self):
