@@ -116,7 +116,7 @@ class Text(object):
     def offer(self, word):
         if self.get(word) == -1:
             self.vocab[word] = self.index
-            return self.index + 1
+            self.index += 1
         return self.vocab[word]
 
     def get(self, word):

@@ -44,7 +44,7 @@ class Segment(object):
     def span(self):
         return self.get_right() - self.get_left()
 
-    def increment(self):
+    def increment(self, d):
         pass
 
     def num_children(self):
@@ -81,7 +81,7 @@ class InternalSegment(Segment):
     def update_count(self):
         self.set_count(0.0)
         for s in self.children.keys():
-            self.increment(self.children[s].getCount())
+            self.increment(self.children[s].get_count())
 
     def get_count(self):
         return self.count
@@ -98,10 +98,9 @@ class InternalSegment(Segment):
     def put(self, branch, w):
         i = self.find_index(w)
         if i == -2:
-            if len(self.children) == 0:
-                self.right = w
+            if len(self.children) == 0: self.right = w
             self.children[w] = branch
-            return branch
+            return None
         else:
             old = self.children[w]
             self.children[w] = branch
@@ -118,12 +117,11 @@ class RootSegment(InternalSegment):
     def get_right(self):
         return 0
 
-    def increment(self):
+    def increment(self, d):
         pass
 
     def get_count(self):
-        return len(self.text)
-    
+        return self.text.size()
 
 class BaseSegment(InternalSegment):
 

@@ -18,10 +18,11 @@ class SuffixTree:
         self.index = 0;
         self.loc = 0;
         self.offset = 0;
-        self.current = self.root;
+        self.current = self.get_root()
         self.num_sentences = 0;
         self.num_nodes = 1;
         self.num_leaves = 0;
+        self.disc = 0.1
         
     def get_root(self):
         return self.root
@@ -46,8 +47,8 @@ class SuffixTree:
             while self.offset >= span:
                 self.loc += span
                 self.offset -= span
-                current = branch
-                branch = current.find_branch(self.text.at(self.loc))
+                self.current = branch
+                branch = self.current.find_branch(self.text.at(self.loc))
                 span = branch.span()
                     
     def process(self):
@@ -60,7 +61,7 @@ class SuffixTree:
             self.canonize()
             if self.offset == 0:
                 b = self.current.find_branch(self.text.at(self.index))
-                p = b != None
+                p = b is not None
             else:
                 b = self.current.find_branch(self.text.at(self.loc))
                 p = self.text.at(b.get_left() + self.offset) == self.text.at(self.index)
@@ -68,7 +69,7 @@ class SuffixTree:
             if p:
                 self.loc = b.get_left()
                 self.offset += 1
-                if old_branch != None: old_branch.set_link(self.current)
+                if old_branch is not None: old_branch.set_link(self.current)
                 break
                 
             if self.offset > 0:
@@ -80,7 +81,7 @@ class SuffixTree:
                 leaf = LeafSegment(self.text, self.index)
                 self.num_nodes += 1
                 self.num_leaves += 1
-                leaf.set_link(self.root)
+                leaf.set_link(self.get_root())
                 branch.put(leaf, self.text.at(self.index))
                 branch.increment(old.get_count() + leaf.get_count())
                 self.current.increment(old.get_count())
@@ -92,10 +93,9 @@ class SuffixTree:
                 self.num_leaves += 1
                 leaf.set_link(self.root)
                 branch.put(leaf, self.text.at(self.index))
-                branch.increment() # this might cause problems; overloading
+                branch.update_count()
                 
-            
-            if old_branch != None:
+            if old_branch is not None:
                 old_branch.set_link(branch)
                 
             old_branch = branch
@@ -105,14 +105,10 @@ class SuffixTree:
         if c is None: return
         if c.get_left() > -1:
             if c.num_children() == 0: return
-            count = c.get_count()
-            s = c
-            s.set_count()
-            if count == s.get_count(): return
+            c.update_count()
             
-        s = c
-        for child in s.children:
-            self.update_counts(s.children[child])
+        for child in c.children:
+            self.update_counts(c.children[child])
             
     
     def update_all_counts(self):
@@ -125,6 +121,22 @@ class SuffixTree:
     
     def at(self, i):
         return self.text.at(i)
+    
+    def print_tree(self):
+        self.print_segment(self.get_root(), 0)
+        
+        
+    def print_segment(self, c, depth):
+        if c is None: return
+        
+        pad = ''
+        for i in range(depth): pad += '  '
+        print(pad + str(c.get_left()) + '({})'.format(self.text.get_word_from_index(self.text.at(c.get_left()))) + 'count({})'.format(c.get_count()))
+        
+        if c.num_children() == 0: return
+        for child in c.children:
+            self.print_segment(c.children[child], depth+1) 
+        
     
         
         

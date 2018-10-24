@@ -17,13 +17,18 @@ for w in text:
     print('adding', w)
     trie.add(w)
     
+print('\n')
+trie.print_tree()
+print('\n')
+    
 trie.update_all_counts()
 
 stlm = STLM(trie)
 
-test = 'a a a'.split()
+tests = ['c a'.split(), 'c a o'.split(), 'a o'.split(), 'o'.split(), 'c'.split()]
 
-seq = Sequence()
-for t in test: seq.push_back(t)
 
-print(stlm.prob(seq))
+for test in tests:
+    seq = Sequence()
+    for t in test: seq.push_back(t)
+    print(stlm.prob(seq))
