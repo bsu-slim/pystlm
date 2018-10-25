@@ -18,6 +18,7 @@ from tqdm import tqdm
 from stwac import STWAC
 from suffixtree import SuffixTree
 from sequence import Sequence
+from operator import itemgetter
 
 trials = 1
 scores = []
@@ -124,8 +125,8 @@ for trial in range(0,trials+1):
     # now we finally use our data for training
     trie.set_grounded_data((positive_train,negative_train))
     trie.train_nodes()
-    for key in list(trie.wac.keys()):
-        print(key)
+    #for key in list(trie.wac.keys()):
+    #    print(key)
     
     print('evaluating...')
     utts = pd.read_sql_query("SELECT * FROM hand", con)
@@ -149,15 +150,18 @@ for trial in range(0,trials+1):
         if len(episode) == 0: continue
         stwac.start_new_utterance()
         predictions = None
-        parent = None
         for inc in list(set(episode.inc)):
             increment = episode[episode.inc == inc]
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
-            predictions = stwac.prob(predictions, word, feats)
-        #wac.compose_conn(list(zip(intents,feats)))
-    s = sum(corr)/len(corr)
+            p = stwac.prob(predictions, word, feats)
+            if predictions is None: predictions = p
+            else: predictions *= p
+        guess = max(zip(intents, predictions), key=itemgetter(1))[0]
+        gold = list(set(targs[targs.episode_id == eid].target))[0]
+        corr.append(guess == gold)
+    s = float(sum(corr))/float(len(corr))
     print(s)
     scores.append(s)
     

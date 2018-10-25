@@ -149,10 +149,13 @@ class SuffixTree:
         pos_word_frame,neg_word_frame = self.get_train_data_for_word(c_word)
         
         target = u'{}-{}'.format(p_word, c_word)
-
+        if pos_word_frame.shape != neg_word_frame.shape: 
+            print("we have issues", pos_word_frame.shape, neg_word_frame.shape)
+            return
         X = np.concatenate([pos_word_frame,  neg_word_frame])
             
         # need all parents
+        '''
         if len(parent_targets) > 0:
             X_pt = np.copy(X)
             for parent_target in parent_targets:
@@ -160,6 +163,7 @@ class SuffixTree:
                 prediction = self.wac[parent_target].predict_proba(X_pt)[:,1]
                 X_pt = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
             X = X_pt
+        '''
         
         classifier, classf_params = self.classifier_spec
         y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))
