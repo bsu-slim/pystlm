@@ -15,7 +15,7 @@ from tqdm import tqdm_notebook as tqdm
 import traceback
 import pickle
 from tqdm import tqdm
-from stlm import STLM
+from stwac import STWAC
 from suffixtree import SuffixTree
 from sequence import Sequence
 
@@ -139,15 +139,21 @@ for trial in range(0,trials+1):
     '''
     eval_data = sqldf(query, locals())
     
+    stwac = STWAC(trie)
+    
     corr = []
     for eid in test_eids:
         episode = eval_data[eval_data.episode_id == eid]
         if len(episode) == 0: continue
+        stwac.start_new_utterance()
+        predictions = None
+        parent = None
         for inc in list(set(episode.inc)):
             increment = episode[episode.inc == inc]
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
+            predictions, parent = stwac.prob(predictions, parent, word, feats)
         #wac.compose_conn(list(zip(intents,feats)))
     s = sum(corr)/len(corr)
     print(s)

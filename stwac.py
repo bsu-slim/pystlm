@@ -15,8 +15,14 @@ class STWAC(STLM):
         super(STWAC, self).__init__(trie)
         
         
+    def prob(self, word, X):
+        word = self.trie.get_text().get(word)
+        p = self.get_prob(word, X)
+        return p
+        
+        
     def get_prob(self, word):
-        prob = 0.0
+        predictions = 0.0
         if self.offset.size() > 0:
             arc = self.current
             if arc.get_left() + self.offset.size() > arc.get_right():
@@ -46,4 +52,4 @@ class STWAC(STLM):
                 else:
                     prob = self.disc / (self.current.num_children() * self.disc + self.current.get_count())
             
-        return prob
+        return predictions
