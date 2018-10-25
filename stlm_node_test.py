@@ -26,6 +26,7 @@ for w in nodes:
     print('adding', w)
     trie.add(w)
     
+    
 print('\n')
 trie.print_tree()
 print('\n')

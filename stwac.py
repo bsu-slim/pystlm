@@ -3,6 +3,8 @@ Created on Oct 24, 2018
 
 @author: ckennington
 '''
+
+
 from sequence import Text
 from constants import Constants
 from stlm import STLM

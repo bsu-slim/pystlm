@@ -3,8 +3,13 @@ Created on Oct 23, 2018
 
 @author: ckennington
 '''
+
 from segment import RootSegment, BaseSegment, InternalSegment, LeafSegment
 from sequence import Text
+
+from sklearn import linear_model
+import numpy as np
+import random
 
 class SuffixTree:
     
@@ -23,6 +28,8 @@ class SuffixTree:
         self.num_nodes = 1;
         self.num_leaves = 0;
         self.disc = 0.1
+        self.wac = {}
+        self.classifier_spec=(linear_model.LogisticRegression,{'penalty':'l2'})
         
     def get_root(self):
         return self.root
@@ -49,6 +56,7 @@ class SuffixTree:
                 self.offset -= span
                 self.current = branch
                 branch = self.current.find_branch(self.text.at(self.loc))
+                if branch is None: break # BAD!!!
                 span = branch.span()
                     
     def process(self):
@@ -110,19 +118,63 @@ class SuffixTree:
         for child in c.children:
             self.update_counts(c.children[child])
             
-    def train_node(self, parent, node):
+    def train_node(self, parent_target, parent, node):
         if node is None: return
         if node.get_left() > -1:
             if node.num_children() == 0: return
-            # training WAC nodes needs to happen here
+            parent_target = self.ground_node(parent_target, parent, node)
             
         for child in node.children:
-            self.trian_node(node, node.children[child])
+            self.train_node(parent_target, node, node.children[child])
     
-    def train_nodes(self):
+    def train_nodes(self, model_name='temp.mdl'):
         for child in self.get_root().children:
-            self.trian_node(self.get_root(), self.get_root().children[child])
+            self.train_node(None, self.get_root(), self.get_root().children[child])
             
+    def get_train_data_for_word(self, word):
+        todrop = ['word', 'inc', 'episode_id', 'id']
+        positive_train,negative_train = self.train_data
+        pos_word_frame = positive_train[positive_train.word == word]
+        pos_word_frame = np.array(pos_word_frame.drop(todrop, 1))
+        neg_word_frame = negative_train[negative_train.word == word]
+        neg_word_frame = np.array(neg_word_frame.drop(todrop, 1))
+        neg_word_frame = random.sample(list(neg_word_frame), len(pos_word_frame))
+        return np.array(pos_word_frame),np.array(neg_word_frame)
+        
+    
+    def ground_node(self, parent_target, parent, child): 
+        
+        p_word = self.text.get_word_from_index(self.text.at(parent.get_left()))
+        c_word = self.text.get_word_from_index(self.text.at(child.get_left()))
+        print(p_word, c_word)
+        pos_word_frame,neg_word_frame = self.get_train_data_for_word(c_word)
+        
+        print(pos_word_frame.shape, neg_word_frame.shape)
+        X = np.concatenate([pos_word_frame,  neg_word_frame])
+        
+        if parent_target is not None:
+            prediction = self.wac[parent_target].predict_proba(X)[:,1]
+            X = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
+        
+        classifier, classf_params = self.classifier_spec
+        y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))
+        
+        print(X.shape, y.shape)
+        
+        target = '{}-{}'.format(p_word, c_word)
+        this_classf = classifier(**classf_params)
+        this_classf.fit(X,y)
+        self.wac[target] = this_classf
+        
+        return target
+    
+    
+    def set_grounded_data(self, train_data):
+        self.train_data = train_data
+        
+    def set_classifier_spec(self, spec):
+        self.classifier_spec= spec
+        
     
     def update_all_counts(self):
         self.update_counts(self.get_root())
