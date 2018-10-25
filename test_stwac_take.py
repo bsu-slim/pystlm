@@ -124,6 +124,8 @@ for trial in range(0,trials+1):
     # now we finally use our data for training
     trie.set_grounded_data((positive_train,negative_train))
     trie.train_nodes()
+    for key in list(trie.wac.keys()):
+        print(key)
     
     print('evaluating...')
     utts = pd.read_sql_query("SELECT * FROM hand", con)
@@ -153,7 +155,7 @@ for trial in range(0,trials+1):
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
-            predictions, parent = stwac.prob(predictions, parent, word, feats)
+            predictions = stwac.prob(predictions, word, feats)
         #wac.compose_conn(list(zip(intents,feats)))
     s = sum(corr)/len(corr)
     print(s)

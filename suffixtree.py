@@ -120,11 +120,10 @@ class SuffixTree:
             
     def train_node(self, parent_targets, parent, node):
         if node is None: return
-        if node.get_left() > -1:
-            if node.num_children() == 0: return
-            parent_target = self.ground_node(parent_targets, parent, node) # make sure to the copy the list so it doesn't pass by ref
-            parent_targets.append(parent_target)
+        parent_target = self.ground_node(parent_targets, parent, node) # make sure to the copy the list so it doesn't pass by ref
+        parent_targets.append(parent_target)
             
+        if node.num_children() == 0: return
         for child in node.children:
             self.train_node(list(parent_targets), node, node.children[child])
     
@@ -149,11 +148,15 @@ class SuffixTree:
         c_word = self.text.get_word_from_index(self.text.at(child.get_left()))
         pos_word_frame,neg_word_frame = self.get_train_data_for_word(c_word)
         
+        target = u'{}-{}'.format(p_word, c_word)
+
         X = np.concatenate([pos_word_frame,  neg_word_frame])
+            
         # need all parents
-        if len(parent_targets) == 0:
+        if len(parent_targets) > 0:
             X_pt = np.copy(X)
             for parent_target in parent_targets:
+                print(parent_target, target)
                 prediction = self.wac[parent_target].predict_proba(X_pt)[:,1]
                 X_pt = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
             X = X_pt
@@ -161,7 +164,7 @@ class SuffixTree:
         classifier, classf_params = self.classifier_spec
         y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))
         
-        target = '{}-{}'.format(p_word, c_word)
+        
         this_classf = classifier(**classf_params)
         this_classf.fit(X,y)
         self.wac[target] = this_classf
@@ -201,9 +204,6 @@ class SuffixTree:
         if c.num_children() == 0: return
         for child in c.children:
             self.print_segment(c.children[child], depth+1) 
-        
-    
-        
         
         
     

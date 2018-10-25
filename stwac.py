@@ -9,20 +9,37 @@ from sequence import Text
 from constants import Constants
 from stlm import STLM
 
+import numpy as np
+
 class STWAC(STLM):
    
     def __init__(self, trie):
         super(STWAC, self).__init__(trie)
         
         
-    def prob(self, word, X):
+    def prob(self, predictions,word, X):
         word = self.trie.get_text().get(word)
-        p = self.get_prob(word, X)
-        return p
+        new_predictions = self.get_prob(predictions, word, X)
+        return new_predictions
         
         
-    def get_prob(self, word):
-        predictions = 0.0
+    def ground(self, predictions, child, X):
+        if predictions is not None:
+            X = np.concatenate([predictions.reshape(-1,1), X],axis=1)
+
+        p_word = self.trie.text.get_word_from_index(self.trie.text.at(self.current.get_left()))
+        if child is not None:
+            c_word = self.trie.text.get_word_from_index(self.trie.text.at(child.get_left()))
+            
+        parent_target = u'{}-{}'.format(p_word, c_word)
+
+        print(parent_target)        
+        preds = self.trie.wac[parent_target].predict_proba(X)[:,1]
+        
+        return preds
+        
+        
+    def get_prob(self, predictions, word, X):
         if self.offset.size() > 0:
             arc = self.current
             if arc.get_left() + self.offset.size() > arc.get_right():
@@ -32,24 +49,24 @@ class STWAC(STLM):
         if self.word_is_here(word):
             if self.offset.size() == 0:
                 child = self.find_prefix_arc(word)
-                prob = (self.disc + child.get_count()) / (self.current.num_children() * self.disc + self.current.get_count())
+                # usual case: word is found where we expect
+                prob = self.ground(predictions, child, X)
                 if child.span() > 1: self.offset.push_back(word)
                 else: self.current = child
             else: 
-                count = self.current.get_count()
-                prob = (count - self.disc) / count # only one child, so it carries all of the mass, minus discount
+                prob = self.ground(predictions, child, X)
                 self.offset.push_back(word)
         else: # here is where we backoff
             if self.current.get_left() > -1:
                 if self.offset.size() > 0:
                     self.offset.clear()
                 self.current = self.current.get_link()
-                prob = self.get_prob(word)
+                prob = self.get_prob(predictions, word, X)
             else:
                 if self.offset.size() > 0:
                     self.offset.cut()
-                    prob = self.get_prob(word)
+                    prob = self.get_prob(predictions, word, X)
                 else:
-                    prob = self.disc / (self.current.num_children() * self.disc + self.current.get_count())
+                    prob = self.ground(predictions, None, X)
             
-        return predictions
+        return prob

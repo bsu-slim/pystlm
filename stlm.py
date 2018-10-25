@@ -6,7 +6,7 @@ Created on Oct 23, 2018
 from sequence import Text
 from constants import Constants
 
-class STLM:
+class STLM(object):
     
     def __init__(self, trie):
         self.trie = trie
