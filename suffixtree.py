@@ -118,18 +118,19 @@ class SuffixTree:
         for child in c.children:
             self.update_counts(c.children[child])
             
-    def train_node(self, parent_target, parent, node):
+    def train_node(self, parent_targets, parent, node):
         if node is None: return
         if node.get_left() > -1:
             if node.num_children() == 0: return
-            parent_target = self.ground_node(parent_target, parent, node)
+            parent_target = self.ground_node(parent_targets, parent, node) # make sure to the copy the list so it doesn't pass by ref
+            parent_targets.append(parent_target)
             
         for child in node.children:
-            self.train_node(parent_target, node, node.children[child])
+            self.train_node(list(parent_targets), node, node.children[child])
     
-    def train_nodes(self, model_name='temp.mdl'):
+    def train_nodes(self):
         for child in self.get_root().children:
-            self.train_node(None, self.get_root(), self.get_root().children[child])
+            self.train_node(list(), self.get_root(), self.get_root().children[child])
             
     def get_train_data_for_word(self, word):
         todrop = ['word', 'inc', 'episode_id', 'id']
@@ -142,24 +143,23 @@ class SuffixTree:
         return np.array(pos_word_frame),np.array(neg_word_frame)
         
     
-    def ground_node(self, parent_target, parent, child): 
+    def ground_node(self, parent_targets, parent, child): 
         
         p_word = self.text.get_word_from_index(self.text.at(parent.get_left()))
         c_word = self.text.get_word_from_index(self.text.at(child.get_left()))
-        print(p_word, c_word)
         pos_word_frame,neg_word_frame = self.get_train_data_for_word(c_word)
         
-        print(pos_word_frame.shape, neg_word_frame.shape)
         X = np.concatenate([pos_word_frame,  neg_word_frame])
-        
-        if parent_target is not None:
-            prediction = self.wac[parent_target].predict_proba(X)[:,1]
-            X = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
+        # need all parents
+        if len(parent_targets) == 0:
+            X_pt = np.copy(X)
+            for parent_target in parent_targets:
+                prediction = self.wac[parent_target].predict_proba(X_pt)[:,1]
+                X_pt = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
+            X = X_pt
         
         classifier, classf_params = self.classifier_spec
         y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))
-        
-        print(X.shape, y.shape)
         
         target = '{}-{}'.format(p_word, c_word)
         this_classf = classifier(**classf_params)
