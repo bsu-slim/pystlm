@@ -128,9 +128,8 @@ class SuffixTree:
         offset=1
         while offset < parent.span():
             parent_target = self.ground_node(parent_targets, parent, node, offset)
-            parent_targets.append(parent_target)
+            if parent_target is not None: parent_targets.append(parent_target)
             offset+=1
-            
             
         if node.num_children() == 0: return
         for child in node.children:
@@ -167,15 +166,12 @@ class SuffixTree:
         X = np.concatenate([pos_word_frame,  neg_word_frame])
             
         # need all parents
-        '''
         if len(parent_targets) > 0:
             X_pt = np.copy(X)
             for parent_target in parent_targets:
-                print(parent_target, target)
                 prediction = self.wac[parent_target].predict_proba(X_pt)[:,1]
                 X_pt = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
             X = X_pt
-        '''
         
         classifier, classf_params = self.classifier_spec
         y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))

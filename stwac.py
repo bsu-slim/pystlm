@@ -24,18 +24,23 @@ class STWAC(STLM):
         
         
     def ground(self, predictions, child, X):
-        #if predictions is not None:
-        #    X = np.concatenate([predictions.reshape(-1,1), X],axis=1)
+        if predictions is not None:
+            X = np.concatenate([predictions.reshape(-1,1), X],axis=1)
         
         if child is None: return predictions # this should not be necessary, or at least do something different
 
         p_word = self.trie.text.get_word_from_index(self.trie.text.at(self.current.get_left()))
-        c_word = self.trie.text.get_word_from_index(self.trie.text.at(child.get_left()))
+        
+        if self.offset.size() > 0:
+            c_word = self.text.get_word_from_index(self.at(self.current.get_left())+self.offset.size())
+        else:
+            c_word = self.trie.text.get_word_from_index(self.trie.text.at(child.get_left()))
             
         parent_target = u'{}-{}'.format(p_word, c_word)
         
         if parent_target not in self.trie.wac: return predictions
 
+        print(parent_target)
         preds = self.trie.wac[parent_target].predict_proba(X)[:,1]
         
         return preds
