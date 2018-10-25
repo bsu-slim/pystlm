@@ -6,6 +6,7 @@ Created on Oct 23, 2018
 
 from segment import RootSegment, BaseSegment, InternalSegment, LeafSegment
 from sequence import Text
+from constants import Constants
 
 from sklearn import linear_model
 import numpy as np
@@ -19,7 +20,7 @@ class SuffixTree:
         self.base = BaseSegment(self.root)
         self.root.set_link(self.base);
         
-        #text.offer(Constants.ROOT);
+        self.text.offer(Constants.ROOT);
         self.index = 0;
         self.loc = 0;
         self.offset = 0;
@@ -120,8 +121,16 @@ class SuffixTree:
             
     def train_node(self, parent_targets, parent, node):
         if node is None: return
-        parent_target = self.ground_node(parent_targets, parent, node) # make sure to the copy the list so it doesn't pass by ref
-        parent_targets.append(parent_target)
+        parent_target = self.ground_node(parent_targets, parent, node, 0) # make sure to the copy the list so it doesn't pass by ref
+        if parent_target is not None:
+            parent_targets.append(parent_target)
+        
+        offset=1
+        while offset < parent.span():
+            parent_target = self.ground_node(parent_targets, parent, node, offset)
+            parent_targets.append(parent_target)
+            offset+=1
+            
             
         if node.num_children() == 0: return
         for child in node.children:
@@ -142,16 +151,19 @@ class SuffixTree:
         return np.array(pos_word_frame),np.array(neg_word_frame)
         
     
-    def ground_node(self, parent_targets, parent, child): 
+    def ground_node(self, parent_targets, parent, child, offset): 
         
         p_word = self.text.get_word_from_index(self.text.at(parent.get_left()))
-        c_word = self.text.get_word_from_index(self.text.at(child.get_left()))
+        if offset > 0:
+            c_word = self.text.get_word_from_index(self.at(parent.get_left())+offset)
+        else:
+            c_word = self.text.get_word_from_index(self.text.at(child.get_left()))
+            
         pos_word_frame,neg_word_frame = self.get_train_data_for_word(c_word)
         
         target = u'{}-{}'.format(p_word, c_word)
-        if pos_word_frame.shape != neg_word_frame.shape: 
-            print("we have issues", pos_word_frame.shape, neg_word_frame.shape)
-            return
+        if len(pos_word_frame) == 0: return None
+            
         X = np.concatenate([pos_word_frame,  neg_word_frame])
             
         # need all parents
@@ -195,7 +207,8 @@ class SuffixTree:
         return self.text.at(i)
     
     def print_tree(self):
-        self.print_segment(self.get_root(), 0)
+        for child in self.get_root().children:
+            self.print_segment(self.get_root().children[child], 0)
         
         
     def print_segment(self, c, depth):
@@ -203,7 +216,12 @@ class SuffixTree:
         
         pad = ''
         for i in range(depth): pad += '  '
-        print(pad + str(c.get_left()) + '({})'.format(self.text.get_word_from_index(self.text.at(c.get_left()))) + 'count({})'.format(c.get_count()))
+        print(pad + str(c.get_left()) + ' ({})'.format(self.text.get_word_from_index(self.at(c.get_left()))) + ' count({})'.format(c.get_count()))
+        
+        offset = 1
+        while offset < c.span():
+            print(pad + str(c.get_left()) + ' offset({})'.format(self.text.get_word_from_index(self.at(c.get_left())+offset)))
+            offset +=1
         
         if c.num_children() == 0: return
         for child in c.children:
@@ -211,4 +229,5 @@ class SuffixTree:
         
         
     
+        
         

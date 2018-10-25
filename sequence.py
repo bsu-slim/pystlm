@@ -141,7 +141,7 @@ class Text(object):
 
     def get_word_from_index(self, ind):
         for word in self.vocab:
-            if self.vocab[word] == self.at(ind):
+            if self.vocab[word] == ind:
                 return word
         # return (T)Constants.UNK;
         return None

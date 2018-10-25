@@ -10,7 +10,6 @@ from constants import Constants
 from stlm import STLM
 
 import numpy as np
-from dask.array.learn import predict
 
 class STWAC(STLM):
    
@@ -34,6 +33,8 @@ class STWAC(STLM):
         c_word = self.trie.text.get_word_from_index(self.trie.text.at(child.get_left()))
             
         parent_target = u'{}-{}'.format(p_word, c_word)
+        
+        if parent_target not in self.trie.wac: return predictions
 
         preds = self.trie.wac[parent_target].predict_proba(X)[:,1]
         
