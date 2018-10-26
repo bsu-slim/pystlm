@@ -78,7 +78,7 @@ class Text(object):
     def __init__(self):
         self.vocab = dict()
         self.items = list()
-        self.index = 0
+        self.index = -1
         # vocab.put((T)Constants.ROOT, index++);
 
     def get_vocabulary(self):

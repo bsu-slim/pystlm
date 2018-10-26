@@ -153,6 +153,7 @@ for trial in range(0,trials+1):
         for inc in list(set(episode.inc)):
             increment = episode[episode.inc == inc]
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
+            print('current word ' + word)
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
             p = stwac.prob(predictions, word, feats)
