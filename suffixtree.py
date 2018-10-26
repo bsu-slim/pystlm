@@ -14,7 +14,7 @@ import random
 
 class SuffixTree:
     
-    def __init__(self):
+    def __init__(self, spec=(linear_model.LogisticRegression,{'penalty':'l2'})):
         self.text = Text()
         self.root = RootSegment(self.text)
         self.base = BaseSegment(self.root)
@@ -30,7 +30,7 @@ class SuffixTree:
         self.num_leaves = 0;
         self.disc = 0.1
         self.wac = {}
-        self.classifier_spec=(linear_model.LogisticRegression,{'penalty':'l2'})
+        self.classifier_spec=spec
         
     def get_root(self):
         return self.root
@@ -171,12 +171,14 @@ class SuffixTree:
             p_word = self.text.get_word_from_index(self.text.at(parent.get_left()))
             target = u'{}-{}'.format(p_word, c_word)
             # need all parents
+            
             if len(parent_targets) > 0:
                 X_pt = np.copy(X)
                 for parent_target in parent_targets:
                     prediction = self.wac[parent_target].predict_proba(X_pt)[:,1]
                     X_pt = np.concatenate([prediction.reshape(-1,1), X],axis=1) # adding in the parent data
                 X = X_pt
+            
         
         classifier, classf_params = self.classifier_spec
         y = np.array([1] * len(pos_word_frame) + [0] * len(neg_word_frame))

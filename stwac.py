@@ -15,6 +15,7 @@ class STWAC(STLM):
    
     def __init__(self, trie):
         super(STWAC, self).__init__(trie)
+        self.compose = False
         
         
     def prob(self, predictions,word, X):
@@ -22,17 +23,18 @@ class STWAC(STLM):
         new_predictions = self.get_prob(predictions, word, X)
         return new_predictions
         
+    def get_compose(self):
+        return self.compose
         
     def ground(self, predictions, child, X):
-
         
-        if child is None: return predictions # this should not be necessary, or at least do something different
 
         p_word = self.trie.text.get_word_from_index(self.trie.text.at(self.current.get_left()))
         
         if self.offset.size() > 0:
-            c_word = self.text.get_word_from_index(self.at(self.current.get_left())+self.offset.size())
+            c_word = self.trie.text.get_word_from_index(self.trie.at(self.current.get_left())+self.offset.size())
         else:
+            if child is None: return None # some of the time, there might not be a child node
             c_word = self.trie.text.get_word_from_index(self.trie.text.at(child.get_left()))
             
         if predictions is None:
@@ -41,9 +43,8 @@ class STWAC(STLM):
             X = np.concatenate([predictions.reshape(-1,1), X],axis=1)
             parent_target = u'{}-{}'.format(p_word, c_word)
         
-        if parent_target not in self.trie.wac: return predictions
+        if parent_target not in self.trie.wac: return None
 
-        print(parent_target)
         preds = self.trie.wac[parent_target].predict_proba(X)[:,1]
         
         return preds
@@ -56,7 +57,7 @@ class STWAC(STLM):
                 self.current = self.find_prefix_arc(self.offset.at(0))
                 self.offset.clear()
                 
-        compose = False
+        self.compose = False
         if self.word_is_here(word):
             if self.offset.size() == 0:
                 child = self.find_prefix_arc(word)
@@ -72,13 +73,13 @@ class STWAC(STLM):
                 if self.offset.size() > 0:
                     self.offset.clear()
                 self.current = self.current.get_link()
-                return self.get_prob(predictions, word, X)
+                prob = self.get_prob(predictions, word, X)
             else:
                 if self.offset.size() > 0:
                     self.offset.cut()
-                    return self.get_prob(predictions, word, X)
+                    prob = self.get_prob(predictions, word, X)
                 else:
-                    compose = True
-                    prob = self.ground(predictions, None, X)
+                    self.compose = True
+                    prob = self.ground(None, None, X) # at this point, we've followed backoff to the root, which means no predcessor predictions
             
-        return prob,compose
+        return prob

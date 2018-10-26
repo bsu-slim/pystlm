@@ -20,12 +20,28 @@ from suffixtree import SuffixTree
 from sequence import Sequence
 from operator import itemgetter
 
-trials = 1
+from sklearn import tree
+from sklearn import neural_network
+from sklearn import linear_model
+from sklearn import gaussian_process
+from sklearn import naive_bayes
+
+trials = 10
 scores = []
 
-trie = SuffixTree()
+mlp_spec = (neural_network.MLPClassifier, {'hidden_layer_sizes':(5,5), 'solver':'lbfgs', 'alpha':1e-5})
+tree_spec = (tree.DecisionTreeClassifier,{'max_depth':3})
+lr_spec=(linear_model.LogisticRegression,{'penalty':'l2'})
+gauss_spec = (gaussian_process.GaussianProcessClassifier, {})
+nb_spec= (naive_bayes.GaussianNB, {})
 
-for trial in range(0,trials+1):
+spec = gauss_spec
+
+
+print(spec)
+trie = SuffixTree(spec=spec)
+
+for trial in range(0,trials):
     
     '''
     requires take.db to be in the working folder
@@ -150,16 +166,22 @@ for trial in range(0,trials+1):
         if len(episode) == 0: continue
         stwac.start_new_utterance()
         predictions = None
+        p = None
         for inc in list(set(episode.inc)):
             increment = episode[episode.inc == inc]
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
-            p,c = stwac.prob(predictions, word, feats)
-            if predictions is None: predictions = p
+            p = stwac.prob(p, word, feats)
+            if p is None: continue
+            p = p.reshape(-1,1)
+            if predictions is None: 
+                predictions = p
             else: 
-                if c: predictions *= p
-                else: predictions = p
+                predictions = np.concatenate([predictions, p],axis=1)
+        
+        
+        predictions = np.prod(predictions, axis=1)
         guess = max(zip(intents, predictions), key=itemgetter(1))[0]
         gold = list(set(targs[targs.episode_id == eid].target))[0]
         corr.append(guess == gold)
@@ -167,5 +189,4 @@ for trial in range(0,trials+1):
     print(s)
     scores.append(s)
     
-print(np.mean(scores), len(scores))
-print(np.std(scores))
+    print(np.mean(scores), len(scores), np.std(scores))

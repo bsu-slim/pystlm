@@ -8,6 +8,7 @@ from suffixtree import SuffixTree
 from sequence import Sequence
 
 
+
 trie = SuffixTree()
 
 
