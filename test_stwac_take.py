@@ -153,12 +153,13 @@ for trial in range(0,trials+1):
         for inc in list(set(episode.inc)):
             increment = episode[episode.inc == inc]
             word = increment.word.iloc[0] # all the words in the increment are the same, so just get the first one
-            print('current word ' + word)
             intents = increment.id
             feats = np.array(increment.drop(todrop, 1))
-            p = stwac.prob(predictions, word, feats)
+            p,c = stwac.prob(predictions, word, feats)
             if predictions is None: predictions = p
-            else: predictions *= p
+            else: 
+                if c: predictions *= p
+                else: predictions = p
         guess = max(zip(intents, predictions), key=itemgetter(1))[0]
         gold = list(set(targs[targs.episode_id == eid].target))[0]
         corr.append(guess == gold)

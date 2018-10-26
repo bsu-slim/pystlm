@@ -56,6 +56,7 @@ class STWAC(STLM):
                 self.current = self.find_prefix_arc(self.offset.at(0))
                 self.offset.clear()
                 
+        compose = False
         if self.word_is_here(word):
             if self.offset.size() == 0:
                 child = self.find_prefix_arc(word)
@@ -71,12 +72,13 @@ class STWAC(STLM):
                 if self.offset.size() > 0:
                     self.offset.clear()
                 self.current = self.current.get_link()
-                prob = self.get_prob(predictions, word, X)
+                return self.get_prob(predictions, word, X)
             else:
                 if self.offset.size() > 0:
                     self.offset.cut()
-                    prob = self.get_prob(predictions, word, X)
+                    return self.get_prob(predictions, word, X)
                 else:
+                    compose = True
                     prob = self.ground(predictions, None, X)
             
-        return prob
+        return prob,compose
